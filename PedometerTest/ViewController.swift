@@ -7,14 +7,62 @@
 //
 
 import UIKit
+import CoreMotion
 
 class ViewController: UIViewController {
-
+    
+    @IBOutlet weak var activityTypeLabel: UILabel!
+    @IBOutlet weak var stepsCountLabel: UILabel!
+    
+    
+    let pedometer = CMPedometer()
+    let activityManager = CMMotionActivityManager()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        startTrackingActivityType()
+        startCountingSteps()
+        startUpdating()
+    }
+    
+    func startTrackingActivityType() {
+        activityManager.startActivityUpdates(to: OperationQueue.main) {
+            [weak self] (activity: CMMotionActivity?) in
+            
+            guard let activity = activity else { return }
+            DispatchQueue.main.async {
+                if activity.walking {
+                    self?.activityTypeLabel.text = "Walking"
+                } else if activity.stationary {
+                    self?.activityTypeLabel.text = "Stationary"
+                } else if activity.running {
+                    self?.activityTypeLabel.text = "Running"
+                } else if activity.automotive {
+                    self?.activityTypeLabel.text = "Automotive"
+                }
+            }
+        }
+    }
+    
+    func startCountingSteps() {
+        pedometer.startUpdates(from: Date()) {
+            [weak self] pedometerData, error in
+            guard let pedometerData = pedometerData, error == nil else { return }
+            
+            DispatchQueue.main.async {
+                self?.stepsCountLabel.text = pedometerData.numberOfSteps.stringValue
+            }
+        }
+    }
+    
+    func startUpdating() {
+        if CMMotionActivityManager.isActivityAvailable() {
+            startTrackingActivityType()
+        }
+        
+        if CMPedometer.isStepCountingAvailable() {
+            startCountingSteps()
+        }
     }
 
-
 }
-
